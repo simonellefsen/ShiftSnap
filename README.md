@@ -20,6 +20,7 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 3. Optional local demo helper:
    - `DEMO_OWNER_USER_ID` (UUID to fetch encounters in UI)
+   - `NEXT_PUBLIC_DEMO_OWNER_USER_ID` (pre-fills create encounter form)
    - `NEXT_PUBLIC_APP_URL` (defaults to `http://localhost:3000`)
 
 ## Database Migrations (Shared Supabase Safe Mode)

@@ -8,10 +8,13 @@ type Encounter = {
   started_at: string;
 };
 
-async function getEncounters() {
-  const ownerUserId = process.env.DEMO_OWNER_USER_ID;
+async function getEncounters(ownerUserId: string | undefined) {
   if (!ownerUserId) {
-    return { encounters: [] as Encounter[], warning: "Set DEMO_OWNER_USER_ID to view records." };
+    return {
+      encounters: [] as Encounter[],
+      warning:
+        "No user context configured yet. Set DEMO_OWNER_USER_ID (server env) or open /encounters?ownerUserId=<uuid>."
+    };
   }
 
   const res = await fetch(
@@ -27,8 +30,13 @@ async function getEncounters() {
   return { encounters: data.encounters, warning: null };
 }
 
-export default async function EncounterListPage() {
-  const { encounters, warning } = await getEncounters();
+export default async function EncounterListPage({
+  searchParams
+}: {
+  searchParams?: { ownerUserId?: string };
+}) {
+  const ownerUserId = searchParams?.ownerUserId ?? process.env.DEMO_OWNER_USER_ID;
+  const { encounters, warning } = await getEncounters(ownerUserId);
 
   return (
     <div className="grid" style={{ marginTop: "1rem" }}>
@@ -37,9 +45,9 @@ export default async function EncounterListPage() {
           <h1 style={{ margin: 0 }}>Encounters</h1>
           <small>Phone: capture. Desktop: review and generate notes.</small>
         </div>
-        <button type="button" disabled title="Wiring form in next step">
-          New Encounter
-        </button>
+        <Link href="/encounters/new">
+          <button type="button">New Encounter</button>
+        </Link>
       </div>
 
       {warning ? <div className="card"><small>{warning}</small></div> : null}
