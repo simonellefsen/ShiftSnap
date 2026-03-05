@@ -63,6 +63,9 @@ Important:
 - `POST /api/encounters`
 - `GET /api/encounters`
 - `GET /api/encounters/:id`
+- `POST /api/encounters/:id/stream-session`
+- `POST /api/encounters/:id/events`
+- `POST /api/encounters/:id/complete`
 - `GET /api/auth/google`
 - `GET /auth/callback`
 

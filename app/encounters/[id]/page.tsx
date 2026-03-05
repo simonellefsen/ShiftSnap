@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSupabaseSchema } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/service";
+import LiveCapturePanel from "./live-capture-panel";
 
 type EncounterEvent = {
   id: number;
@@ -90,6 +91,12 @@ export default async function EncounterDetailPage({
           Corti interaction: <code>{data.encounter.corti_interaction_id}</code>
         </p>
       </div>
+
+      <LiveCapturePanel
+        encounterId={data.encounter.id}
+        interactionId={data.encounter.corti_interaction_id}
+        initialStatus={data.encounter.status}
+      />
 
       <div className="grid grid-2">
         <section className="card">
