@@ -20,19 +20,21 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
    - `NEXT_PUBLIC_SUPABASE_URL` (optional fallback)
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (optional fallback)
 
-## Auth (Magic Link)
+## Auth (Google SSO)
 1. In Supabase Auth settings:
    - Set **Site URL** to your production URL (e.g. `https://shift-snap.vercel.app`).
    - Add redirect URLs:
      - `https://shift-snap.vercel.app/auth/callback`
      - `http://localhost:3000/auth/callback`
-2. Ensure Vercel has:
+2. In Supabase Auth > Providers:
+   - Enable Google provider and configure Google OAuth credentials.
+3. Ensure Vercel has:
    - `SUPABASE_URL`
    - `SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
-3. App flow:
+4. App flow:
    - Sign in at `/login`
-   - Magic link returns to `/auth/callback`
+   - Google OAuth returns to `/auth/callback`
    - Protected routes: `/encounters/*`, `/api/encounters/*`
 
 ## Database Migrations (Shared Supabase Safe Mode)
@@ -54,6 +56,7 @@ Important:
 - `POST /api/encounters`
 - `GET /api/encounters`
 - `GET /api/encounters/:id`
+- `GET /api/auth/google`
 - `GET /auth/callback`
 
 ## UI

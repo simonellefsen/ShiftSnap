@@ -6,16 +6,19 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") || "/encounters";
+  const nextPath = next.startsWith("/") ? next : "/encounters";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login`);
+    const message = encodeURIComponent("Missing authorization code from provider.");
+    return NextResponse.redirect(`${origin}/login?error=${message}`);
   }
 
   const supabase = createSupabaseServerClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return NextResponse.redirect(`${origin}/login`);
+    const message = encodeURIComponent(error.message);
+    return NextResponse.redirect(`${origin}/login?error=${message}`);
   }
 
   const {
@@ -26,5 +29,5 @@ export async function GET(request: Request) {
     await ensureProfile(user.id, user.email ?? null);
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(`${origin}${nextPath}`);
 }
