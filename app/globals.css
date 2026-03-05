@@ -25,6 +25,16 @@ main {
   padding: 1rem;
 }
 
+.brandbar {
+  display: flex;
+  align-items: center;
+  padding-top: 0.3rem;
+}
+
+.brandlink {
+  display: inline-flex;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -40,6 +50,10 @@ main {
 @media (min-width: 900px) {
   .grid-2 {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .brandbar {
+    padding-top: 0.8rem;
   }
 }
 
