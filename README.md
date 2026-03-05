@@ -13,11 +13,12 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
    - `CORTI_TENANT_NAME`
    - `CORTI_ENVIRONMENT_ID` (`us` or `eu`)
    - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `SUPABASE_APP_SCHEMA` (recommended: `shiftsnap`)
    - `SUPABASE_DB_URL` (Postgres connection string for migrations)
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_URL` (optional fallback)
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (optional fallback)
 
 ## Auth (Magic Link)
 1. In Supabase Auth settings:
@@ -26,8 +27,8 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
      - `https://shift-snap.vercel.app/auth/callback`
      - `http://localhost:3000/auth/callback`
 2. Ensure Vercel has:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
 3. App flow:
    - Sign in at `/login`

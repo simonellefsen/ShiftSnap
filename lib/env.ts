@@ -1,16 +1,20 @@
-const requiredServerVars = [
-  "CORTI_CLIENT_ID",
-  "CORTI_CLIENT_SECRET",
-  "CORTI_TENANT_NAME",
-  "CORTI_ENVIRONMENT_ID",
-  "SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-] as const;
-
 export function assertServerEnv() {
-  const missing = requiredServerVars.filter((k) => !process.env[k]);
+  const missing = [
+    "CORTI_CLIENT_ID",
+    "CORTI_CLIENT_SECRET",
+    "CORTI_TENANT_NAME",
+    "CORTI_ENVIRONMENT_ID",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ].filter((k) => !process.env[k]);
+
+  const hasSupabaseUrl = Boolean(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const hasPublishableKey = Boolean(
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  if (!hasSupabaseUrl) missing.push("SUPABASE_URL");
+  if (!hasPublishableKey) missing.push("SUPABASE_PUBLISHABLE_KEY");
+
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
   }
@@ -29,4 +33,12 @@ export function getCortiAuthUrl() {
 
 export function getSupabaseSchema() {
   return process.env.SUPABASE_APP_SCHEMA || "shiftsnap";
+}
+
+export function getSupabaseUrl() {
+  return process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+}
+
+export function getSupabasePublishableKey() {
+  return process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 }

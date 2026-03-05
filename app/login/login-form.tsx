@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function LoginForm({ nextPath }: { nextPath: string }) {
   const [email, setEmail] = useState("");
@@ -15,18 +14,20 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     setStatus(null);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-
-    const { error: signInError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
+    const response = await fetch("/api/auth/magic-link", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        nextPath
+      })
     });
 
-    if (signInError) {
-      setError(signInError.message);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: "Unknown error" }));
+      setError(body.error || `Request failed (${response.status})`);
       setSubmitting(false);
       return;
     }
