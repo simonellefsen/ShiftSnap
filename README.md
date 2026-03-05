@@ -15,12 +15,13 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
    - `SUPABASE_URL`
    - `SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GOOGLE_CLIENT_ID` (for Google One-Tap on login page)
    - `SUPABASE_APP_SCHEMA` (recommended: `shiftsnap`)
    - `SUPABASE_DB_URL` (Postgres connection string for migrations)
    - `NEXT_PUBLIC_SUPABASE_URL` (optional fallback)
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (optional fallback)
 
-## Auth (Google SSO)
+## Auth (Google SSO + One-Tap)
 1. In Supabase Auth settings:
    - Set **Site URL** to your production URL (e.g. `https://shift-snap.vercel.app`).
    - Add redirect URLs:
@@ -28,12 +29,18 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
      - `http://localhost:3000/auth/callback`
 2. In Supabase Auth > Providers:
    - Enable Google provider and configure Google OAuth credentials.
-3. Ensure Vercel has:
+3. In Google Cloud OAuth client settings:
+   - Add Authorized JavaScript origins:
+     - `https://shift-snap.vercel.app`
+     - `http://localhost:3000`
+4. Ensure Vercel has:
    - `SUPABASE_URL`
    - `SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
-4. App flow:
+   - `GOOGLE_CLIENT_ID`
+5. App flow:
    - Sign in at `/login`
+   - Google One-Tap may auto-prompt on `/login`
    - Google OAuth returns to `/auth/callback`
    - Protected routes: `/encounters/*`, `/api/encounters/*`
 

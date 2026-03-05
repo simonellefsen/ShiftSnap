@@ -42,3 +42,7 @@ export function getSupabaseUrl() {
 export function getSupabasePublishableKey() {
   return process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 }
+
+export function getGoogleClientId() {
+  return process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+}
