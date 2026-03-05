@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/service";
 import { getSupabaseSchema } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET(
   _req: Request,
@@ -8,6 +9,13 @@ export async function GET(
 ) {
   const encounterId = params.id;
   const schema = getSupabaseSchema();
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const [{ data: encounter, error: encounterError }, { data: events, error: eventsError }] =
     await Promise.all([
@@ -16,6 +24,7 @@ export async function GET(
         .from("encounters")
         .select("*")
         .eq("id", encounterId)
+        .eq("owner_user_id", user.id)
         .single(),
       supabaseAdmin
         .schema(schema)

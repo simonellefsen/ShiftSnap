@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import LogoutButton from "./logout-button";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,9 +10,14 @@ export const metadata: Metadata = {
   description: "Clinical handoff copilot"
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="en">
       <body>
@@ -25,6 +32,10 @@ export default function RootLayout({
                 priority
               />
             </Link>
+            <div className="brandactions">
+              {user ? <small>{user.email}</small> : null}
+              {user ? <LogoutButton /> : null}
+            </div>
           </header>
           {children}
         </main>

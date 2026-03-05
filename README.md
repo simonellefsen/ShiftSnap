@@ -18,10 +18,21 @@ Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
    - `SUPABASE_DB_URL` (Postgres connection string for migrations)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Optional local demo helper:
-   - `DEMO_OWNER_USER_ID` (UUID to fetch encounters in UI)
-   - `NEXT_PUBLIC_DEMO_OWNER_USER_ID` (pre-fills create encounter form)
-   - `NEXT_PUBLIC_APP_URL` (defaults to `http://localhost:3000`)
+
+## Auth (Magic Link)
+1. In Supabase Auth settings:
+   - Set **Site URL** to your production URL (e.g. `https://shift-snap.vercel.app`).
+   - Add redirect URLs:
+     - `https://shift-snap.vercel.app/auth/callback`
+     - `http://localhost:3000/auth/callback`
+2. Ensure Vercel has:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+3. App flow:
+   - Sign in at `/login`
+   - Magic link returns to `/auth/callback`
+   - Protected routes: `/encounters/*`, `/api/encounters/*`
 
 ## Database Migrations (Shared Supabase Safe Mode)
 This repo uses app-scoped migrations so multiple projects can share one Supabase DB.
@@ -40,8 +51,9 @@ Important:
 
 ## Available Routes
 - `POST /api/encounters`
-- `GET /api/encounters?ownerUserId=<uuid>`
+- `GET /api/encounters`
 - `GET /api/encounters/:id`
+- `GET /auth/callback`
 
 ## UI
 - `/` landing

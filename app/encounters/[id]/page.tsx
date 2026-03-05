@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSupabaseSchema } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/service";
 
 type EncounterEvent = {
   id: number;
@@ -21,12 +25,40 @@ type EncounterDetail = {
 };
 
 async function getEncounter(id: string): Promise<EncounterDetail | null> {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const res = await fetch(`${base}/api/encounters/${id}`, { cache: "no-store" });
-  if (!res.ok) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/login?next=/encounters/${id}`);
+  }
+
+  const schema = getSupabaseSchema();
+  const [{ data: encounter }, { data: events }] = await Promise.all([
+    supabaseAdmin
+      .schema(schema)
+      .from("encounters")
+      .select("id, title, status, mode, corti_interaction_id, started_at, ended_at")
+      .eq("id", id)
+      .eq("owner_user_id", user.id)
+      .single(),
+    supabaseAdmin
+      .schema(schema)
+      .from("encounter_events")
+      .select("id, event_type, event_payload, created_at")
+      .eq("encounter_id", id)
+      .order("created_at", { ascending: true })
+  ]);
+
+  if (!encounter) {
     return null;
   }
-  return (await res.json()) as EncounterDetail;
+
+  return {
+    encounter,
+    events: (events || []) as EncounterEvent[]
+  };
 }
 
 export default async function EncounterDetailPage({

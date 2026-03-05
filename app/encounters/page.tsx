@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSupabaseSchema } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureProfile, supabaseAdmin } from "@/lib/supabase/service";
 
 type Encounter = {
   id: string;
@@ -8,35 +12,31 @@ type Encounter = {
   started_at: string;
 };
 
-async function getEncounters(ownerUserId: string | undefined) {
-  if (!ownerUserId) {
-    return {
-      encounters: [] as Encounter[],
-      warning:
-        "No user context configured yet. Set DEMO_OWNER_USER_ID (server env) or open /encounters?ownerUserId=<uuid>."
-    };
-  }
+async function getEncounters(ownerUserId: string) {
+  const schema = getSupabaseSchema();
+  const { data } = await supabaseAdmin
+    .schema(schema)
+    .from("encounters")
+    .select("id, title, status, mode, started_at")
+    .eq("owner_user_id", ownerUserId)
+    .order("started_at", { ascending: false })
+    .limit(100);
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/encounters?ownerUserId=${ownerUserId}`,
-    { cache: "no-store" }
-  );
-
-  if (!res.ok) {
-    return { encounters: [] as Encounter[], warning: `Encounter fetch failed (${res.status}).` };
-  }
-
-  const data = (await res.json()) as { encounters: Encounter[] };
-  return { encounters: data.encounters, warning: null };
+  return (data || []) as Encounter[];
 }
 
-export default async function EncounterListPage({
-  searchParams
-}: {
-  searchParams?: { ownerUserId?: string };
-}) {
-  const ownerUserId = searchParams?.ownerUserId ?? process.env.DEMO_OWNER_USER_ID;
-  const { encounters, warning } = await getEncounters(ownerUserId);
+export default async function EncounterListPage() {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?next=/encounters");
+  }
+
+  await ensureProfile(user.id, user.email ?? null);
+  const encounters = await getEncounters(user.id);
 
   return (
     <div className="grid" style={{ marginTop: "1rem" }}>
@@ -49,8 +49,6 @@ export default async function EncounterListPage({
           <button type="button">New Encounter</button>
         </Link>
       </div>
-
-      {warning ? <div className="card"><small>{warning}</small></div> : null}
 
       <div className="grid">
         {encounters.length === 0 ? (

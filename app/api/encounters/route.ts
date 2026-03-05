@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createCortiInteraction } from "@/lib/corti/client";
-import { supabaseAdmin } from "@/lib/supabase/service";
+import { ensureProfile, supabaseAdmin } from "@/lib/supabase/service";
 import { getSupabaseSchema } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const createEncounterSchema = z.object({
   mode: z.enum(["ambient", "dictation"]),
   title: z.string().min(1).max(120).optional(),
-  patientRef: z.string().min(1).max(80).optional(),
-  ownerUserId: z.string().uuid()
+  patientRef: z.string().min(1).max(80).optional()
 });
 
 export async function POST(req: Request) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const parsed = createEncounterSchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
@@ -20,16 +28,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const { mode, title, patientRef, ownerUserId } = parsed.data;
+  const { mode, title, patientRef } = parsed.data;
 
   const cortiInteraction = await createCortiInteraction(title);
+  await ensureProfile(user.id, user.email ?? null);
 
   const schema = getSupabaseSchema();
   const { data, error } = await supabaseAdmin
     .schema(schema)
     .from("encounters")
     .insert({
-      owner_user_id: ownerUserId,
+      owner_user_id: user.id,
       mode,
       title: title ?? "Untitled Encounter",
       patient_ref: patientRef ?? null,
@@ -55,20 +64,23 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const ownerUserId = searchParams.get("ownerUserId");
-  const limit = Number(searchParams.get("limit") ?? "20");
-
-  if (!ownerUserId) {
-    return NextResponse.json({ error: "ownerUserId is required" }, { status: 400 });
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { searchParams } = new URL(req.url);
+  const limit = Number(searchParams.get("limit") ?? "20");
 
   const schema = getSupabaseSchema();
   const { data, error } = await supabaseAdmin
     .schema(schema)
     .from("encounters")
     .select("id, title, status, mode, started_at, ended_at, corti_interaction_id")
-    .eq("owner_user_id", ownerUserId)
+    .eq("owner_user_id", user.id)
     .order("started_at", { ascending: false })
     .limit(Math.min(limit, 100));
 

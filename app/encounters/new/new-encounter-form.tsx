@@ -4,18 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type FormState = {
-  ownerUserId: string;
   mode: "ambient" | "dictation";
   title: string;
   patientRef: string;
 };
 
-const defaultOwner = process.env.NEXT_PUBLIC_DEMO_OWNER_USER_ID || "";
-
 export default function NewEncounterForm() {
   const router = useRouter();
   const [state, setState] = useState<FormState>({
-    ownerUserId: defaultOwner,
     mode: "ambient",
     title: "",
     patientRef: ""
@@ -34,7 +30,6 @@ export default function NewEncounterForm() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        ownerUserId: state.ownerUserId,
         mode: state.mode,
         title: state.title || undefined,
         patientRef: state.patientRef || undefined
@@ -55,19 +50,7 @@ export default function NewEncounterForm() {
   return (
     <form className="card grid" onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>
       <h1 style={{ margin: 0 }}>New Encounter</h1>
-      <small>
-        Temporary setup until auth is wired: provide the owner user UUID.
-      </small>
-
-      <label>
-        Owner User ID (UUID)
-        <input
-          required
-          value={state.ownerUserId}
-          onChange={(event) => setState((prev) => ({ ...prev, ownerUserId: event.target.value }))}
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-        />
-      </label>
+      <small>Encounter will be created for your signed-in account.</small>
 
       <label>
         Mode
