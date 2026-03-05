@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         patient_ref: patientRef ?? null,
         status: "recording",
         started_at: new Date().toISOString(),
-        corti_interaction_id: cortiInteraction.id
+        corti_interaction_id: cortiInteraction.interactionId
       })
       .select("id, corti_interaction_id")
       .single();
@@ -58,7 +58,9 @@ export async function POST(req: Request) {
       encounterId: data.id,
       cortiInteractionId: data.corti_interaction_id,
       streamSession: {
-        wsUrl: `wss://api.${process.env.CORTI_ENVIRONMENT_ID}.corti.app/audio-bridge/v2/stream?interactionId=${data.corti_interaction_id}`,
+        wsUrl:
+          cortiInteraction.websocketUrl ||
+          `wss://api.${process.env.CORTI_ENVIRONMENT_ID}.corti.app/audio-bridge/v2/stream?interactionId=${data.corti_interaction_id}`,
         expiresInSec: 240
       }
     });
