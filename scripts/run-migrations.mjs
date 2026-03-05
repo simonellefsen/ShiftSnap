@@ -152,6 +152,10 @@ async function run() {
 }
 
 run().catch((error) => {
-  console.error(error.message);
+  if (error instanceof Error) {
+    console.error(error.message || error.stack || String(error));
+  } else {
+    console.error("Migration failed:", JSON.stringify(error));
+  }
   process.exit(1);
 });
