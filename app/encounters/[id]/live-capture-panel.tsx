@@ -20,17 +20,48 @@ function floatTo16BitPCM(input: Float32Array) {
   return output;
 }
 
+function downsampleBuffer(buffer: Float32Array, inputRate: number, targetRate: number) {
+  if (targetRate === inputRate) return buffer;
+  if (targetRate > inputRate) return buffer;
+
+  const ratio = inputRate / targetRate;
+  const newLength = Math.round(buffer.length / ratio);
+  const result = new Float32Array(newLength);
+
+  let offsetResult = 0;
+  let offsetBuffer = 0;
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
+    let accum = 0;
+    let count = 0;
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i += 1) {
+      accum += buffer[i];
+      count += 1;
+    }
+    result[offsetResult] = accum / Math.max(count, 1);
+    offsetResult += 1;
+    offsetBuffer = nextOffsetBuffer;
+  }
+  return result;
+}
+
 export default function LiveCapturePanel({ encounterId, interactionId, initialStatus }: Props) {
   const router = useRouter();
   const [liveStatus, setLiveStatus] = useState<LiveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState<string>("-");
+  const liveStatusRef = useRef<LiveStatus>("idle");
 
   const wsRef = useRef<WebSocket | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+
+  function setStatus(status: LiveStatus) {
+    liveStatusRef.current = status;
+    setLiveStatus(status);
+  }
 
   async function postEvent(eventType: string, eventPayload: Record<string, unknown>, source: "app" | "corti" = "app") {
     await fetch(`/api/encounters/${encounterId}/events`, {
@@ -42,7 +73,7 @@ export default function LiveCapturePanel({ encounterId, interactionId, initialSt
 
   async function startCapture() {
     try {
-      setLiveStatus("starting");
+      setStatus("starting");
       setError(null);
 
       const sessionRes = await fetch(`/api/encounters/${encounterId}/stream-session`, {
@@ -63,26 +94,41 @@ export default function LiveCapturePanel({ encounterId, interactionId, initialSt
         }
       });
 
-      const audioCtx = new AudioContext({ sampleRate: 16000 });
+      const audioCtx = new AudioContext();
       const source = audioCtx.createMediaStreamSource(mediaStream);
       const processor = audioCtx.createScriptProcessor(4096, 1, 1);
       const ws = new WebSocket(session.wsUrl);
       ws.binaryType = "arraybuffer";
 
       ws.onopen = async () => {
-        setLiveStatus("streaming");
+        setStatus("streaming");
         setLastMessage("Connected");
+        ws.send(
+          JSON.stringify({
+            type: "config",
+            config: {
+              transcription: {
+                primaryLanguage: "en",
+                isDiarization: true
+              },
+              mode: {
+                type: "facts",
+                outputLocale: "en-US"
+              }
+            }
+          })
+        );
         await postEvent("session.started", { interactionId }, "app");
       };
 
       ws.onerror = () => {
-        setLiveStatus("error");
+        setStatus("error");
         setError("Corti stream connection failed.");
       };
 
       ws.onclose = () => {
-        if (liveStatus !== "stopping") {
-          setLiveStatus("idle");
+        if (liveStatusRef.current !== "stopping") {
+          setStatus("idle");
         }
       };
 
@@ -104,7 +150,8 @@ export default function LiveCapturePanel({ encounterId, interactionId, initialSt
       processor.onaudioprocess = (audioEvent) => {
         if (!ws || ws.readyState !== WebSocket.OPEN) return;
         const input = audioEvent.inputBuffer.getChannelData(0);
-        const pcm = floatTo16BitPCM(input);
+        const downsampled = downsampleBuffer(input, audioCtx.sampleRate, 16000);
+        const pcm = floatTo16BitPCM(downsampled);
         ws.send(pcm.buffer);
       };
 
@@ -118,13 +165,13 @@ export default function LiveCapturePanel({ encounterId, interactionId, initialSt
       processorRef.current = processor;
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to start capture";
-      setLiveStatus("error");
+      setStatus("error");
       setError(message);
     }
   }
 
   async function stopCapture(markComplete = false) {
-    setLiveStatus("stopping");
+    setStatus("stopping");
 
     try {
       if (processorRef.current) {
@@ -150,11 +197,11 @@ export default function LiveCapturePanel({ encounterId, interactionId, initialSt
         await fetch(`/api/encounters/${encounterId}/complete`, { method: "POST" });
       }
 
-      setLiveStatus("idle");
+      setStatus("idle");
       router.refresh();
     } catch (e) {
       const message = e instanceof Error ? e.message : "Failed to stop capture";
-      setLiveStatus("error");
+      setStatus("error");
       setError(message);
     }
   }

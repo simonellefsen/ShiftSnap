@@ -34,7 +34,9 @@ export async function POST(
 
   const accessToken = await getCortiAccessToken();
   const env = process.env.CORTI_ENVIRONMENT_ID;
-  const wsUrl = `wss://api.${env}.corti.app/audio-bridge/v2/stream?interactionId=${encounter.corti_interaction_id}&token=${encodeURIComponent(accessToken)}`;
+  const tenant = process.env.CORTI_TENANT_NAME;
+  const bearerToken = `Bearer ${accessToken}`;
+  const wsUrl = `wss://api.${env}.corti.app/audio-bridge/v2/stream?interactionId=${encounter.corti_interaction_id}&tenant-name=${encodeURIComponent(tenant || "")}&token=${encodeURIComponent(bearerToken)}`;
 
   return NextResponse.json({
     wsUrl,
