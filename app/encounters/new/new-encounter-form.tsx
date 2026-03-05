@@ -37,8 +37,13 @@ export default function NewEncounterForm() {
     });
 
     if (!response.ok) {
-      const body = await response.json().catch(() => ({ error: "Unknown error" }));
-      setError(body.error || `Request failed (${response.status})`);
+      const text = await response.text();
+      try {
+        const body = JSON.parse(text) as { error?: string };
+        setError(body.error || `Request failed (${response.status})`);
+      } catch {
+        setError(text || `Request failed (${response.status})`);
+      }
       setIsSubmitting(false);
       return;
     }
