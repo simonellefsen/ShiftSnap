@@ -39,6 +39,14 @@ function generateNonce(length = 32) {
   return text;
 }
 
+async function sha256(input: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const bytes = Array.from(new Uint8Array(digest));
+  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export default function GoogleOneTap({
   googleClientId,
   supabaseUrl,
@@ -65,20 +73,26 @@ export default function GoogleOneTap({
     }
 
     const nonce = generateNonce();
+    const hashedNonce = await sha256(nonce);
 
     window.google.accounts.id.initialize({
       client_id: googleClientId,
       callback: async (response) => {
-        await supabase.auth.signInWithIdToken({
+        const { error } = await supabase.auth.signInWithIdToken({
           provider: "google",
           token: response.credential,
           nonce
         });
 
+        if (error) {
+          console.error("Google One-Tap signInWithIdToken failed:", error.message);
+          return;
+        }
+
         router.push(nextPath);
         router.refresh();
       },
-      nonce,
+      nonce: hashedNonce,
       use_fedcm_for_prompt: true
     });
 
