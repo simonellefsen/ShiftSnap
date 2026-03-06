@@ -2,6 +2,11 @@
 
 Phase 1 scaffold for ShiftSnap (Corti + Supabase + Vercel).
 
+## Disclaimer
+- Test environment only.
+- Do not use real patient or production data.
+- Accounts and stored data may be reset or deleted at any time.
+
 ## Setup
 1. Install dependencies:
    ```bash

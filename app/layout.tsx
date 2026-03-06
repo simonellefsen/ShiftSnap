@@ -22,6 +22,10 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <main>
+          <aside className="warningbar" role="note" aria-label="Test environment warning">
+            Test environment only. Do not use real patient/production data. Accounts and data may
+            be reset or deleted at any time.
+          </aside>
           <header className="brandbar">
             <Link href="/" className="brandlink" aria-label="ShiftSnap home">
               <Image
